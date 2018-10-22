@@ -35,10 +35,9 @@ import kotlin.reflect.KClass
 /**
  * Check all loaded definitions by resolving them one by one
  */
-fun KoinContext.dryRun(defaultParameters: ParameterDefinition) {
+fun KoinContext.dryRun() {
     Koin.logger.info("[Check Modules]")
-
-    instanceRegistry.dryRun(defaultParameters)
+    instanceRegistry.dryRun()
 }
 
 /**
@@ -51,7 +50,7 @@ fun KoinContext.beanDefinitions() = instanceRegistry.beanRegistry.definitions
  * @param clazz - bean class
  */
 fun KoinContext.beanDefinition(clazz: KClass<*>): BeanDefinition<*>? =
-    beanDefinitions().firstOrNull() { it.clazz == clazz }
+    beanDefinitions().firstOrNull { it.clazz == clazz }
 
 /**
  * Return all contexts of Koin

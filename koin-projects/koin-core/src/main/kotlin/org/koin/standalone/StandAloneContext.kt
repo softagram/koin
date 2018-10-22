@@ -16,23 +16,13 @@
 package org.koin.standalone
 
 import org.koin.core.Koin
-import org.koin.core.KoinContext
-import org.koin.core.scope.ScopeCallback
-import org.koin.core.bean.BeanRegistry
-import org.koin.core.instance.InstanceFactory
-import org.koin.core.instance.InstanceRegistry
-import org.koin.core.instance.ModuleCallBack
-import org.koin.core.parameter.ParameterDefinition
-import org.koin.core.parameter.emptyParameterDefinition
-import org.koin.core.path.PathRegistry
-import org.koin.core.property.PropertyRegistry
-import org.koin.core.scope.ScopeRegistry
+import org.koin.core.KoinConfiguration
+import org.koin.core.PropertiesConfiguration
 import org.koin.core.time.measureDuration
 import org.koin.dsl.module.Module
 import org.koin.error.AlreadyStartedException
 import org.koin.log.Logger
 import org.koin.log.PrintLogger
-
 
 /**
  * Koin agnostic context support
@@ -43,99 +33,41 @@ object StandAloneContext {
     private var isStarted = false
 
     /**
-     * Koin ModuleDefinition
+     * Koin Builder Configuration
      */
-    lateinit var koinContext: StandAloneKoinContext
+    var koinConfiguration: KoinConfiguration? = null
+
+    fun getKoinConfig(): KoinConfiguration = koinConfiguration ?: error("KoinConfiguration is null")
 
     /**
      * Load Koin modules - whether Koin is already started or not
      * allow late module definition load (e.g: libraries ...)
      *
-     * @param modules : List of Module
+     * @param modules : Module
      */
-    fun loadKoinModules(vararg modules: Module): Koin = synchronized(this) {
-        createContextIfNeeded()
-        return getKoin().build(modules.toList())
+    fun loadKoinModules(vararg modules: Module): KoinConfiguration {
+        return getCurrentContext().loadModules(modules.toList())
     }
 
     /**
-     * Load Koin modules - whether Koin is already started or not
-     * allow late module definition load (e.g: libraries ...)
-     *
-     * @param modules : List of Module
+     * Return current Koin context or create it
      */
-    fun loadKoinModules(modules: List<Module>): Koin = loadKoinModules(*modules.toTypedArray())
-
-    /**
-     * Create Koin context if needed :)
-     */
-    private fun createContextIfNeeded() = synchronized(this) {
-        if (!isStarted) {
+    fun getCurrentContext(): KoinConfiguration {
+        if (koinConfiguration == null) {
             Koin.logger.info("[context] create")
-            val propertyResolver = PropertyRegistry()
-            val scopeRegistry = ScopeRegistry()
-            val instanceResolver = InstanceRegistry(
-                BeanRegistry(),
-                InstanceFactory(),
-                PathRegistry(),
-                scopeRegistry
-            )
-            koinContext = KoinContext(instanceResolver, scopeRegistry, propertyResolver)
-            isStarted = true
+            koinConfiguration = KoinConfiguration.create()
         }
+        return getKoinConfig()
     }
 
     /**
-     * Register ScopeCallback - being notified on Scope closing
-     * @see ScopeCallback - ScopeCallback
-     */
-    fun registerScopeCallback(callback: ScopeCallback) {
-        getKoinContext().scopeRegistry.register(callback)
-    }
-
-    /**
-     * Register ModuleCallBack - being notified on Path release
-     * @see ScopeCallback - ModuleCallBack
+     * Load Koin modules - whether Koin is already started or not
+     * allow late module definition load (e.g: libraries ...)
      *
-     * Deprecared - Use the Scope API
+     * @param modules : List of Module
      */
-    @Deprecated("Please use the Scope API instead.")
-    fun registerModuleCallBack(callback: ModuleCallBack) {
-        getKoinContext().instanceRegistry.instanceFactory.register(callback)
-    }
-
-    /**
-     * Load Koin properties - whether Koin is already started or not
-     * Will look at koin.properties file
-     *
-     * @param useEnvironmentProperties - environment properties
-     * @param useKoinPropertiesFile - koin.properties file
-     * @param extraProperties - additional properties
-     */
-    fun loadProperties(
-        useEnvironmentProperties: Boolean = false,
-        useKoinPropertiesFile: Boolean = true,
-        extraProperties: Map<String, Any> = HashMap()
-    ): Koin = synchronized(this) {
-        createContextIfNeeded()
-
-        val koin = getKoin()
-
-        if (useKoinPropertiesFile) {
-            Koin.logger.info("[properties] load koin.properties")
-            koin.bindKoinProperties()
-        }
-
-        if (extraProperties.isNotEmpty()) {
-            Koin.logger.info("[properties] load extras properties : ${extraProperties.size}")
-            koin.bindAdditionalProperties(extraProperties)
-        }
-
-        if (useEnvironmentProperties) {
-            Koin.logger.info("[properties] load environment properties")
-            koin.bindEnvironmentProperties()
-        }
-        return koin
+    fun loadKoinModules(modules: List<Module>): KoinConfiguration {
+        return getCurrentContext().loadModules(modules)
     }
 
     /**
@@ -149,37 +81,43 @@ object StandAloneContext {
      */
     fun startKoin(
         list: List<Module>,
-        useEnvironmentProperties: Boolean = false,
-        useKoinPropertiesFile: Boolean = false,
-        extraProperties: Map<String, Any> = HashMap(),
+        propertiesConfiguration: PropertiesConfiguration = PropertiesConfiguration(),
         logger: Logger = PrintLogger()
-    ): Koin {
-        val duration = measureDuration {
-            if (isStarted) {
-                throw AlreadyStartedException("Koin is already started. Run startKoin only once or use loadKoinModules")
-            }
-            Koin.logger = logger
-            createContextIfNeeded()
-            loadKoinModules(list)
-
-            if (useKoinPropertiesFile || useEnvironmentProperties || extraProperties.isNotEmpty()) {
-                loadProperties(useEnvironmentProperties, useKoinPropertiesFile, extraProperties)
-            }
-
-            createEagerInstances(emptyParameterDefinition())
+    ): KoinConfiguration {
+        if (isStarted) {
+            throw AlreadyStartedException("Koin is already started. Run startKoin only once or use loadKoinModules")
         }
-
+        val (koin, duration) = startNewContext(logger, propertiesConfiguration, list)
+        isStarted = true
         Koin.logger.debug("Koin started in $duration ms")
-        return getKoin()
+        return koin
+    }
+
+    private fun startNewContext(
+        logger: Logger,
+        propertiesConfiguration: PropertiesConfiguration,
+        list: List<Module>
+    ): Pair<KoinConfiguration, Double> {
+        val koin = getCurrentContext()
+        val duration = measureDuration {
+            Koin.logger = logger
+            koin.apply {
+                loadAllProperties(propertiesConfiguration)
+                loadModules(list)
+            }
+        }
+        return Pair(koin, duration)
     }
 
     /**
-     * Create instances for definitions tagged as `eager`
-     *
-     * @param defaultParameters - default injection parameters
+     * Close actual Koin context
+     * - drop akk instances & definitions
      */
-    fun createEagerInstances(defaultParameters: ParameterDefinition = emptyParameterDefinition()) {
-        getKoinContext().instanceRegistry.createEagerInstances(defaultParameters)
+    fun stopKoin() = synchronized(this) {
+        // Close all
+        koinConfiguration?.close()
+        koinConfiguration = null
+        isStarted = false
     }
 
     /**
@@ -187,31 +125,4 @@ object StandAloneContext {
      */
     @Deprecated("Renamed, please use stopKoin() instead.")
     fun closeKoin() = stopKoin()
-
-    /**
-     * Close actual Koin context
-     * - drop akk instances & definitions
-     */
-    fun stopKoin() = synchronized(this) {
-        if (isStarted) {
-            // Close all
-            getKoinContext().close()
-            isStarted = false
-        }
-    }
-
-    /**
-     * Get Koin
-     */
-    private fun getKoin(): Koin = Koin(koinContext as KoinContext)
-
-    /**
-     * Get KoinContext
-     */
-    private fun getKoinContext(): KoinContext = (koinContext as KoinContext)
 }
-
-/**
- * Stand alone Koin context
- */
-interface StandAloneKoinContext

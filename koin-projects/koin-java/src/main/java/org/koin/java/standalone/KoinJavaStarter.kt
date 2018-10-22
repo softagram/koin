@@ -15,7 +15,8 @@
  */
 package org.koin.java.standalone
 
-import org.koin.core.Koin
+import org.koin.core.KoinConfiguration
+import org.koin.core.PropertiesConfiguration
 import org.koin.dsl.module.Module
 import org.koin.log.Logger
 import org.koin.log.PrintLogger
@@ -42,16 +43,11 @@ object KoinJavaStarter {
     @JvmStatic
     fun startKoin(
         list: List<Module>,
-        useEnvironmentProperties: Boolean = false,
-        useKoinPropertiesFile: Boolean = true,
-        extraProperties: Map<String, Any> = HashMap(),
+        propertiesConfiguration: PropertiesConfiguration = PropertiesConfiguration(),
         logger: Logger = PrintLogger()
-    ): Koin = StandAloneContext.startKoin(
+    ): KoinConfiguration = StandAloneContext.startKoin(
         list,
-        useEnvironmentProperties,
-        useKoinPropertiesFile,
-        extraProperties,
+        propertiesConfiguration,
         logger
     )
-
 }

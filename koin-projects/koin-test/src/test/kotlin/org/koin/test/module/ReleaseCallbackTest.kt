@@ -4,7 +4,6 @@ import org.junit.Assert
 import org.junit.Test
 import org.koin.core.instance.ModuleCallBack
 import org.koin.dsl.module.module
-import org.koin.standalone.StandAloneContext.registerModuleCallBack
 import org.koin.standalone.StandAloneContext.startKoin
 import org.koin.standalone.release
 import org.koin.test.AutoCloseKoinTest
@@ -21,11 +20,11 @@ class ReleaseCallbackTest : AutoCloseKoinTest() {
 
     @Test
     fun `should release context - from B`() {
-        startKoin(listOf(module))
+        val koin = startKoin(listOf(module))
 
         var name = ""
 
-        registerModuleCallBack(object : ModuleCallBack {
+        koin.registerModuleCallBack(object : ModuleCallBack {
             override fun onRelease(path: String) {
                 name = path
             }

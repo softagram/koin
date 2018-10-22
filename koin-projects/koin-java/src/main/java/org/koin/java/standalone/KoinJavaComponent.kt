@@ -75,7 +75,7 @@ object KoinJavaComponent {
      * @param key - key property
      */
     @JvmStatic
-    fun getKoin(): KoinContext = (StandAloneContext.koinContext as KoinContext)
+    fun getKoin(): KoinContext = StandAloneContext.getKoinConfig().koinContext
 
     /**
      * inject lazily given property
@@ -95,7 +95,7 @@ object KoinJavaComponent {
     @JvmOverloads
     @JvmStatic
     fun <T> getProperty(key: String, defaultValue: T? = null): T? {
-        val koinContext = (StandAloneContext.koinContext as KoinContext)
+        val koinContext = getKoin()
         return koinContext.propertyResolver.properties[key] as T? ?: defaultValue
     }
 }

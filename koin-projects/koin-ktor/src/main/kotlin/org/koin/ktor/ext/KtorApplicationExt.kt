@@ -16,14 +16,16 @@
 package org.koin.ktor.ext
 
 import io.ktor.application.Application
-import org.koin.core.KoinContext
+import org.koin.core.PropertiesConfiguration
 import org.koin.core.parameter.ParameterDefinition
 import org.koin.core.parameter.emptyParameterDefinition
 import org.koin.core.scope.Scope
 import org.koin.dsl.module.Module
 import org.koin.log.Logger
 import org.koin.log.PrintLogger
-import org.koin.standalone.StandAloneContext
+import org.koin.standalone.StandAloneContext.getKoinConfig
+import org.koin.standalone.StandAloneContext.startKoin
+import org.koin.standalone.StandAloneContext.stopKoin
 
 
 /**
@@ -41,17 +43,13 @@ import org.koin.standalone.StandAloneContext
  */
 fun Application.installKoin(
     list: List<Module>,
-    useEnvironmentProperties: Boolean = false,
-    useKoinPropertiesFile: Boolean = true,
-    extraProperties: Map<String, Any> = HashMap(),
+    propertiesConfiguration: PropertiesConfiguration = PropertiesConfiguration(),
     logger: Logger = PrintLogger()
 ) {
-    StandAloneContext.stopKoin()
-    StandAloneContext.startKoin(
+    stopKoin()
+    startKoin(
         list,
-        useEnvironmentProperties,
-        useKoinPropertiesFile,
-        extraProperties,
+        propertiesConfiguration,
         logger
     )
 }
@@ -65,10 +63,10 @@ fun Application.installKoin(
  */
 inline fun <reified T : Any> Application.inject(
     name: String = "",
-    scope : Scope? = null,
+    scope: Scope? = null,
     noinline parameters: ParameterDefinition = emptyParameterDefinition()
 ) =
-    lazy { get<T>(name,scope, parameters) }
+    lazy { get<T>(name, scope, parameters) }
 
 /**
  * Retrieve given dependency for KoinComponent
@@ -78,7 +76,7 @@ inline fun <reified T : Any> Application.inject(
  */
 inline fun <reified T : Any> Application.get(
     name: String = "",
-    scope : Scope? = null,
+    scope: Scope? = null,
     noinline parameters: ParameterDefinition = emptyParameterDefinition()
 ) =
     getKoin().get<T>(name, scope, parameters)
@@ -125,7 +123,7 @@ inline fun <reified T> Application.getProperty(key: String, defaultValue: T) =
 /**
  * Help work on ModuleDefinition
  */
-fun Application.getKoin() = (StandAloneContext.koinContext as KoinContext)
+fun Application.getKoin() = getKoinConfig().koinContext
 
 /**
  * Set property value

@@ -16,11 +16,10 @@
 package org.koin.ktor.ext
 
 import io.ktor.routing.Route
-import org.koin.core.KoinContext
 import org.koin.core.parameter.ParameterDefinition
 import org.koin.core.parameter.emptyParameterDefinition
 import org.koin.core.scope.Scope
-import org.koin.standalone.StandAloneContext
+import org.koin.standalone.StandAloneContext.getKoinConfig
 
 
 /**
@@ -97,7 +96,7 @@ inline fun <reified T> Route.getProperty(key: String, defaultValue: T) =
 /**
  * Help work on ModuleDefinition
  */
-fun Route.getKoin() = (StandAloneContext.koinContext as KoinContext)
+fun Route.getKoin() = getKoinConfig().koinContext
 
 /**
  * Set property value

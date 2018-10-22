@@ -61,7 +61,7 @@ class AutoBuilderTest : AutoCloseKoinTest() {
     fun `should get interface instance`() {
         startKoin(listOf(module {
             single { ComponentA() }
-            singleBy<Component,ComponentD>()
+            singleBy<Component, ComponentD>()
         }))
 
         assertNotNull(get<Component>())

@@ -8,7 +8,6 @@ import org.koin.dsl.module.module
 import org.koin.error.NoScopeException
 import org.koin.error.NoScopeFoundException
 import org.koin.log.PrintLogger
-import org.koin.standalone.StandAloneContext.registerScopeCallback
 import org.koin.standalone.StandAloneContext.startKoin
 import org.koin.standalone.get
 import org.koin.test.AutoCloseKoinTest
@@ -186,21 +185,21 @@ class ScopeAPITest : AutoCloseKoinTest() {
 
     @Test
     fun `scope close callback`() {
-        startKoin(listOf(module {
+        val config = startKoin(listOf(module {
             scope("session") { B() }
         }), logger = PrintLogger(showDebug = true))
 
         var closed: String? = null
-        registerScopeCallback(object : ScopeCallback {
+        config.registerScopeCallback(object : ScopeCallback {
             override fun onClose(id: String) {
                 closed = id
             }
         })
 
-        val koin = getKoin()
+        val koinContext = getKoin()
 
         val id = "session"
-        val session: Scope = koin.createScope(id)
+        val session: Scope = koinContext.createScope(id)
 
         val b = get<B>()
         assertNotNull(b)

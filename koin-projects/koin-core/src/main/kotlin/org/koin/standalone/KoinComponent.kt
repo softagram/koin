@@ -20,6 +20,7 @@ import org.koin.core.instance.DefinitionFilter
 import org.koin.core.parameter.ParameterDefinition
 import org.koin.core.parameter.emptyParameterDefinition
 import org.koin.core.scope.Scope
+import org.koin.standalone.StandAloneContext.getKoinConfig
 import kotlin.reflect.KClass
 
 
@@ -138,6 +139,5 @@ fun KoinComponent.releaseContext(path: String): Unit = release(path)
 /**
  * Access to Koin context
  */
-internal fun getKoinContext(): KoinContext = (StandAloneContext.koinContext as KoinContext)
-
+internal fun getKoinContext(): KoinContext = getKoinConfig().koinContext
 

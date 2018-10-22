@@ -1,10 +1,10 @@
 package org.koin.test.core
 
 import org.koin.core.Koin
+import org.koin.core.KoinConfiguration
 import org.koin.core.KoinContext
 import org.koin.core.bean.BeanRegistry
 import org.koin.core.instance.InstanceRegistry
-import org.koin.core.parameter.emptyParameterDefinition
 import org.koin.core.path.PathRegistry
 import org.koin.core.property.PropertyRegistry
 import org.koin.core.scope.ScopeRegistry
@@ -19,21 +19,25 @@ import org.koin.test.ext.koin.dryRun
  */
 fun StandAloneContext.checkModules(list: List<Module>, logger: Logger) {
     Koin.logger = logger //PrintLogger(showDebug = true)
-    Koin.logger.info("[Sandbox]")
-    val scopeRegistry = ScopeRegistry()
-    koinContext =
-            KoinContext(
-                InstanceRegistry(
-                    BeanRegistry(),
-                    SandboxInstanceFactory(),
-                    PathRegistry(),
-                    scopeRegistry
-                ), scopeRegistry, PropertyRegistry()
-            )
+    val sandboxContext = createSandBoxContext()
 
     // Build list
-    Koin(koinContext as KoinContext).build(list)
+    val configuration = KoinConfiguration(sandboxContext)
+    StandAloneContext.koinConfiguration = configuration
+    configuration.loadModules(list)
 
     // Run checks
-    (koinContext as KoinContext).dryRun(emptyParameterDefinition())
+    sandboxContext.dryRun()
+}
+
+private fun createSandBoxContext(): KoinContext {
+    val scopeRegistry = ScopeRegistry()
+    return KoinContext(
+        InstanceRegistry(
+            BeanRegistry(),
+            SandboxInstanceFactory(),
+            PathRegistry(),
+            scopeRegistry
+        ), scopeRegistry, PropertyRegistry()
+    )
 }

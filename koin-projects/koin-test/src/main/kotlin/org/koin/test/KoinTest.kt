@@ -18,9 +18,6 @@
 package org.koin.test
 
 import org.koin.core.Koin
-import org.koin.core.KoinContext
-import org.koin.core.parameter.ParameterDefinition
-import org.koin.core.parameter.emptyParameterDefinition
 import org.koin.dsl.context.ModuleDefinition
 import org.koin.dsl.module.Module
 import org.koin.dsl.module.module
@@ -29,8 +26,8 @@ import org.koin.log.Logger
 import org.koin.log.PrintLogger
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.StandAloneContext
+import org.koin.standalone.StandAloneContext.getKoinConfig
 import org.koin.test.core.checkModules
-import org.koin.test.ext.koin.dryRun
 import org.mockito.Mockito.mock
 import kotlin.reflect.KClass
 
@@ -52,8 +49,8 @@ interface KoinTest : KoinComponent
  * @Deprecated
  */
 @Deprecated("Please use the checkModules() function to checkModules your list of modules")
-fun KoinTest.dryRun(parameters: ParameterDefinition = emptyParameterDefinition()) =
-    (StandAloneContext.koinContext as KoinContext).dryRun(parameters)
+fun KoinTest.dryRun(): Unit =
+    error("Please use the checkModules() function to checkModules your list of modules.")
 
 /**
  * Check all definition's dependencies - run all modules in a test sandbox
@@ -96,7 +93,7 @@ inline fun <reified T : Any> KoinTest.declareMock(
  */
 fun dumpModulePaths() {
     Koin.logger.info("Module paths:")
-    (StandAloneContext.koinContext as KoinContext).instanceRegistry.pathRegistry.paths.forEach {
+    getKoinConfig().koinContext.instanceRegistry.pathRegistry.paths.forEach {
         Koin.logger.info(
             "[$it]"
         )

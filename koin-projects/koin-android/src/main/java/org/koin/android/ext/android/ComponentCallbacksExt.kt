@@ -17,20 +17,19 @@ package org.koin.android.ext.android
 
 import android.content.ComponentCallbacks
 import android.content.Context
-import org.koin.android.ext.koin.bindAndroidProperties
 import org.koin.android.ext.koin.context
+import org.koin.android.ext.koin.loadPropertiesForAndroid
 import org.koin.android.ext.koin.with
 import org.koin.android.logger.AndroidLogger
 import org.koin.core.Koin
 import org.koin.core.KoinContext
+import org.koin.core.PropertiesConfiguration
 import org.koin.core.parameter.ParameterDefinition
 import org.koin.core.parameter.emptyParameterDefinition
 import org.koin.core.scope.Scope
 import org.koin.dsl.module.Module
 import org.koin.log.Logger
-import org.koin.standalone.StandAloneContext.createEagerInstances
-import org.koin.standalone.StandAloneContext.loadKoinModules
-import org.koin.standalone.StandAloneContext.loadProperties
+import org.koin.standalone.StandAloneContext.getCurrentContext
 
 /**
  * ComponentCallbacks extensions for Android
@@ -51,20 +50,16 @@ import org.koin.standalone.StandAloneContext.loadProperties
 fun ComponentCallbacks.startKoin(
     context: Context,
     modules: List<Module>,
-    extraProperties: Map<String, Any> = HashMap(),
-    loadProperties: Boolean = false,
+    propertiesConfiguration: PropertiesConfiguration = PropertiesConfiguration(),
     logger: Logger = AndroidLogger()
 ) {
     Koin.logger = logger
-
-    val koin = loadKoinModules(modules).with(context)
-
-    if (loadProperties || extraProperties.isNotEmpty()) {
-        loadProperties(false, loadProperties, extraProperties)
-        koin.bindAndroidProperties(context)
+    val config = getCurrentContext()
+    config.loadAllProperties(propertiesConfiguration)
+    if (propertiesConfiguration.useKoinPropertiesFile) {
+        config.loadPropertiesForAndroid(context)
     }
-
-    createEagerInstances(emptyParameterDefinition())
+    config.loadModules(modules).with(context)
 }
 
 /**
@@ -123,8 +118,7 @@ fun ComponentCallbacks.setProperty(key: String, value: Any): Unit =
 /**
  * Get Koin context
  */
-fun ComponentCallbacks.getKoin(): KoinContext =
-    (org.koin.standalone.StandAloneContext.koinContext as KoinContext)
+fun ComponentCallbacks.getKoin(): KoinContext = context()
 
 /**
  * Release a Module from given Path

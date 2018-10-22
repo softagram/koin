@@ -18,6 +18,7 @@ package org.koin.standalone
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
+import org.koin.core.PropertiesConfiguration
 import org.koin.dsl.module.module
 import org.koin.standalone.StandAloneContext.startKoin
 import org.koin.test.AutoCloseKoinTest
@@ -35,7 +36,7 @@ open class KoinJavaComponentTest : AutoCloseKoinTest() {
                 single("api") { RemoteApiImplementation() as DataSource }
                 single { (separator: String) -> DataConverter(separator) }
             }),
-            extraProperties = mapOf("PrefixProp" to "_", "SeparatorProp" to "|")
+            PropertiesConfiguration(extraProperties = mapOf("PrefixProp" to "_", "SeparatorProp" to "|"))
         )
     }
 

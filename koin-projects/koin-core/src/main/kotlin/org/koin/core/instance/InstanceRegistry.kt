@@ -19,6 +19,7 @@ import org.koin.core.Koin
 import org.koin.core.bean.BeanRegistry
 import org.koin.core.fullname
 import org.koin.core.parameter.ParameterDefinition
+import org.koin.core.parameter.emptyParameterDefinition
 import org.koin.core.path.PathRegistry
 import org.koin.core.scope.Scope
 import org.koin.core.scope.ScopeRegistry
@@ -132,12 +133,12 @@ class InstanceRegistry(
      * Create instances at start - tagged eager
      * @param defaultParameters
      */
-    fun createEagerInstances(defaultParameters: ParameterDefinition) {
+    fun createEagerInstances() {
         val definitions = beanRegistry.definitions.filter { it.isEager }
 
         if (definitions.isNotEmpty()) {
             Koin.logger.info("Creating instances ...")
-            createInstances(definitions, defaultParameters)
+            createEagerInstancesForDefinitions(definitions)
         }
     }
 
@@ -146,15 +147,14 @@ class InstanceRegistry(
      * @param definitions
      * @param params
      */
-    private fun createInstances(
-        definitions: Collection<BeanDefinition<*>>,
-        params: ParameterDefinition
+    private fun createEagerInstancesForDefinitions(
+        definitions: Collection<BeanDefinition<*>>
     ) {
         definitions.forEach { def ->
             proceedResolution(
                 def.clazz,
                 null,
-                params
+                emptyParameterDefinition()
             ) { listOf(def) }
         }
     }
@@ -162,8 +162,8 @@ class InstanceRegistry(
     /**
      * Dry Run - run each definition
      */
-    fun dryRun(defaultParameters: ParameterDefinition) {
-        createInstances(beanRegistry.definitions, defaultParameters)
+    fun dryRun() {
+        createEagerInstancesForDefinitions(beanRegistry.definitions)
     }
 
     /**

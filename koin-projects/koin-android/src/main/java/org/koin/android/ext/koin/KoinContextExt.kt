@@ -16,11 +16,11 @@
 package org.koin.android.ext.koin
 
 import org.koin.core.KoinContext
-import org.koin.standalone.StandAloneContext
+import org.koin.standalone.StandAloneContext.getKoinConfig
 
 /**
  * Help work on context
  *
  * @author Arnaud Giuliani
  */
-internal fun context(): KoinContext = (StandAloneContext.koinContext as KoinContext)
+internal fun context(): KoinContext = getKoinConfig().koinContext

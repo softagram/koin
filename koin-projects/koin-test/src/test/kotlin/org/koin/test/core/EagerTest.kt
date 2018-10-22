@@ -54,7 +54,7 @@ class EagerTest : AutoCloseKoinTest() {
     class A
     class B
 
-    private fun KoinContext() = (StandAloneContext.koinContext as KoinContext)
+    private fun KoinContext() = getKoin()
 
     @Test
     fun `default no eager`() {

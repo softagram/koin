@@ -16,18 +16,19 @@
 package org.koin.core
 
 import org.koin.core.Koin.Companion.logger
+import org.koin.core.bean.BeanRegistry
 import org.koin.core.instance.DefinitionFilter
+import org.koin.core.instance.InstanceFactory
 import org.koin.core.instance.InstanceRegistry
 import org.koin.core.instance.InstanceRequest
 import org.koin.core.parameter.ParameterDefinition
 import org.koin.core.parameter.emptyParameterDefinition
+import org.koin.core.path.PathRegistry
 import org.koin.core.property.PropertyRegistry
 import org.koin.core.scope.Scope
-import org.koin.core.scope.ScopeCallback
 import org.koin.core.scope.ScopeRegistry
 import org.koin.error.MissingPropertyException
 import org.koin.error.NoScopeFoundException
-import org.koin.standalone.StandAloneKoinContext
 import kotlin.reflect.KClass
 
 
@@ -42,8 +43,7 @@ class KoinContext(
     val instanceRegistry: InstanceRegistry,
     val scopeRegistry: ScopeRegistry,
     val propertyResolver: PropertyRegistry
-) : StandAloneKoinContext {
-
+) {
     /**
      * Retrieve an instance from its name/class
      * @param name
@@ -52,7 +52,7 @@ class KoinContext(
      */
     inline fun <reified T : Any> get(
         name: String = "",
-        scope : Scope? = null,
+        scope: Scope? = null,
         noinline parameters: ParameterDefinition = emptyParameterDefinition()
     ): T = instanceRegistry.resolve(
         InstanceRequest(
@@ -75,7 +75,7 @@ class KoinContext(
     fun <T : Any> get(
         name: String = "",
         clazz: KClass<*>,
-        scope : Scope? = null,
+        scope: Scope? = null,
         parameters: ParameterDefinition = emptyParameterDefinition(),
         filter: DefinitionFilter? = null
     ): T = instanceRegistry.resolve(
@@ -101,14 +101,15 @@ class KoinContext(
     /**
      * retrieve a scope
      */
-    fun getScope(id: String): Scope = scopeRegistry.getScope(id) ?: throw NoScopeFoundException("Scope '$id' not found")
+    fun getScope(id: String): Scope =
+        scopeRegistry.getScope(id) ?: throw NoScopeFoundException("Scope '$id' not found")
 
     /**
      * Drop all instances for path context
      * @param path
      */
     @Deprecated("Please use Scope API.")
-    fun release(path: String) : Unit {
+    fun release(path: String): Unit {
         val p = instanceRegistry.pathRegistry.getPath(path)
         instanceRegistry.instanceFactory.releasePath(p)
     }
@@ -142,5 +143,22 @@ class KoinContext(
         instanceRegistry.close()
         scopeRegistry.close()
         propertyResolver.clear()
+    }
+
+    companion object {
+        /**
+         * Create KoinContext instance
+         */
+        fun create(): KoinContext {
+            val propertyResolver = PropertyRegistry()
+            val scopeRegistry = ScopeRegistry()
+            val instanceResolver = InstanceRegistry(
+                BeanRegistry(),
+                InstanceFactory(),
+                PathRegistry(),
+                scopeRegistry
+            )
+            return KoinContext(instanceResolver, scopeRegistry, propertyResolver)
+        }
     }
 }

@@ -106,8 +106,8 @@ class ViewModelDSLTest : AutoCloseKoinTest() {
     fun `is a ViewModel`() {
         startKoin(listOf(module))
 
-        val vm = (StandAloneContext.koinContext as KoinContext).beanDefinition(MyViewModel::class)
-        val def = (StandAloneContext.koinContext as KoinContext).beanDefinition(MyService::class)
+        val vm = getKoin().beanDefinition(MyViewModel::class)
+        val def = getKoin().beanDefinition(MyService::class)
         Assert.assertTrue(vm!!.isViewModel())
         Assert.assertFalse(def!!.isViewModel())
     }
